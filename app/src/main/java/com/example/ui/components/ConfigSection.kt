@@ -15,18 +15,22 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Style
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material3.Badge
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -59,6 +63,7 @@ import com.example.model.DetailLevel
 import com.example.model.NarrationConfig
 import com.example.model.NarrationLanguage
 import com.example.model.NarrationStyle
+import com.example.model.TtsVoiceModel
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -70,6 +75,7 @@ fun ConfigSection(
     onStyleChange: (NarrationStyle) -> Unit,
     onDetailLevelChange: (DetailLevel) -> Unit,
     onAiModeChange: (AiMode) -> Unit,
+    onVoiceModelChange: (TtsVoiceModel) -> Unit,
     onSpeechRateChange: (Float) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -109,22 +115,71 @@ fun ConfigSection(
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
                     Text(
-                        text = "Narration Settings",
+                        text = "Narration & Voice Settings",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "Customize language, tone, and instructor style",
+                        text = "Kokoro / Voicebox / Vibe Neural Models (100% Offline)",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 1. Content Category Selector
+            // 1. Neural Voice Model Selector (Kokoro, Voicebox, Vibe Voice, System)
+            SectionLabel(icon = Icons.Default.GraphicEq, title = "Neural Voice Model (No API Needed)")
+            Spacer(modifier = Modifier.height(6.dp))
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                items(TtsVoiceModel.entries) { voice ->
+                    val isSelected = config.voiceModel == voice
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { onVoiceModelChange(voice) }
+                            .testTag("voice_${voice.id}")
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = voice.displayName,
+                                    fontSize = 12.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
+                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                                )
+                                if (isSelected) {
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Icon(
+                                        imageVector = Icons.Default.Check,
+                                        contentDescription = "Selected",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                }
+                            }
+                            Text(
+                                text = "${voice.engineName} • ${voice.gender}",
+                                fontSize = 10.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // 2. Content Category Selector
             SectionLabel(icon = Icons.Default.Category, title = "Drawing Category")
             Spacer(modifier = Modifier.height(6.dp))
             FlowRow(
@@ -174,7 +229,7 @@ fun ConfigSection(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // 2. Language Dropdown
+            // 3. Language Dropdown
             SectionLabel(icon = Icons.Default.Language, title = "Narration Language")
             Spacer(modifier = Modifier.height(6.dp))
             Box(modifier = Modifier.fillMaxWidth()) {
@@ -237,7 +292,7 @@ fun ConfigSection(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // 3. Narration Style
+            // 4. Narration Style
             SectionLabel(icon = Icons.Default.Style, title = "Instructor Tone")
             Spacer(modifier = Modifier.height(6.dp))
             Row(
@@ -272,7 +327,7 @@ fun ConfigSection(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // 4. Detail Level
+            // 5. Detail Level
             SectionLabel(icon = Icons.Default.RecordVoiceOver, title = "Explanation Detail")
             Spacer(modifier = Modifier.height(6.dp))
             Row(
@@ -306,7 +361,7 @@ fun ConfigSection(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // 5. AI Engine Mode (Local AI vs Remote AI)
+            // 6. AI Vision Engine Mode (Local vs Gemini)
             SectionLabel(icon = Icons.Default.Psychology, title = "AI Vision Engine")
             Spacer(modifier = Modifier.height(6.dp))
             Row(
@@ -343,7 +398,7 @@ fun ConfigSection(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // 6. Speech Pace / Speed Slider
+            // 7. Speech Pace / Speed Slider
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,

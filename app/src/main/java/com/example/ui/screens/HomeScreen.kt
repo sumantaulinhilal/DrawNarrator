@@ -197,6 +197,7 @@ fun HomeScreen(
                     onStyleChange = { viewModel.updateStyle(it) },
                     onDetailLevelChange = { viewModel.updateDetailLevel(it) },
                     onAiModeChange = { viewModel.updateAiMode(it) },
+                    onVoiceModelChange = { viewModel.updateVoiceModel(it) },
                     onSpeechRateChange = { viewModel.updateSpeechRate(it) }
                 )
             }

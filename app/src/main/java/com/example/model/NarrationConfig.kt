@@ -52,6 +52,7 @@ data class NarrationConfig(
     val style: NarrationStyle = NarrationStyle.EDUCATIONAL,
     val detailLevel: DetailLevel = DetailLevel.MEDIUM,
     val aiMode: AiMode = AiMode.LOCAL_VISION,
+    val voiceModel: TtsVoiceModel = TtsVoiceModel.KOKORO_HEART,
     val speechRate: Float = 1.0f,
     val speechPitch: Float = 1.0f,
     val sampleIntervalSeconds: Float = 1.0f

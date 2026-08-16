@@ -1,8 +1,11 @@
 package com.example.ui.components
 
+import android.graphics.Bitmap
+import android.media.MediaMetadataRetriever
 import android.widget.MediaController
 import android.widget.VideoView
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,6 +22,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Brush
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Hd
 import androidx.compose.material.icons.filled.OndemandVideo
@@ -33,6 +37,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,22 +45,45 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Brush as ComposeBrush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.example.model.VideoMetadata
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @Composable
 fun VideoPreviewPlayer(
     metadata: VideoMetadata,
     modifier: Modifier = Modifier
 ) {
-    var isPlaying by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    var previewThumbnail by remember(metadata.uri) { mutableStateOf<Bitmap?>(null) }
+    var useNativeVideoView by remember(metadata.uri) { mutableStateOf(false) }
+
+    LaunchedEffect(metadata.uri) {
+        withContext(Dispatchers.IO) {
+            try {
+                val retriever = MediaMetadataRetriever()
+                retriever.setDataSource(context, metadata.uri)
+                val bmp = retriever.getFrameAtTime(1_000_000, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
+                previewThumbnail = bmp
+                retriever.release()
+                useNativeVideoView = true
+            } catch (_: Exception) {
+                // If native retriever cannot open synthetic mock file, keep image mode
+                useNativeVideoView = false
+            }
+        }
+    }
 
     Card(
         modifier = modifier
@@ -65,25 +93,25 @@ fun VideoPreviewPlayer(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            // Header with filename and icon
+            // Header Info
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Surface(
-                    shape = RoundedCornerShape(10.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
-                    modifier = Modifier.size(36.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    modifier = Modifier.size(42.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = Icons.Default.OndemandVideo,
-                            contentDescription = "Video Icon",
+                            contentDescription = "Video Ready",
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(22.dp)
                         )
                     }
                 }
@@ -97,38 +125,84 @@ fun VideoPreviewPlayer(
                         maxLines = 1
                     )
                     Text(
-                        text = "Real-Time Drawing Source",
+                        text = "Real-Time Drawing Source Ready",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
             }
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Video Player Box
+            // Video Player / Canvas Preview Box
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(16f / 9f)
                     .clip(RoundedCornerShape(14.dp))
-                    .background(Color.Black),
+                    .background(Color(0xFF181B20)),
                 contentAlignment = Alignment.Center
             ) {
-                AndroidView(
-                    factory = { context ->
-                        VideoView(context).apply {
-                            setVideoURI(metadata.uri)
-                            val mc = MediaController(context)
-                            mc.setAnchorView(this)
-                            setMediaController(mc)
-                            setOnPreparedListener { mp ->
-                                mp.isLooping = true
+                if (useNativeVideoView) {
+                    AndroidView(
+                        factory = { ctx ->
+                            VideoView(ctx).apply {
+                                setOnErrorListener { _, _, _ -> true }
+                                try {
+                                    setVideoURI(metadata.uri)
+                                    val mc = MediaController(ctx)
+                                    mc.setAnchorView(this)
+                                    setMediaController(mc)
+                                    setOnPreparedListener { mp ->
+                                        mp.isLooping = true
+                                    }
+                                } catch (_: Exception) {}
+                            }
+                        },
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else if (previewThumbnail != null) {
+                    Image(
+                        bitmap = previewThumbnail!!.asImageBitmap(),
+                        contentDescription = "Drawing Preview Frame",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    // Stylized Art Video Canvas Placeholder
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                            modifier = Modifier.size(54.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Default.Brush,
+                                    contentDescription = "Drawing In Progress",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(28.dp)
+                                )
                             }
                         }
-                    },
-                    modifier = Modifier.fillMaxSize()
-                )
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            text = metadata.fileName,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            fontSize = 14.sp
+                        )
+                        Text(
+                            text = "Synthetic Drawing Stream Ready For AI Narration",
+                            color = Color.LightGray,
+                            fontSize = 11.sp
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(14.dp))

@@ -30,19 +30,30 @@ class NarrationPlayer(private val context: Context) {
 
     fun loadAudio(file: File) {
         release()
+        if (!file.exists() || file.length() <= 44L) {
+            return
+        }
         try {
-            mediaPlayer = MediaPlayer().apply {
-                setDataSource(context, Uri.fromFile(file))
-                prepare()
-                _durationMs.value = duration.toLong()
-                setOnCompletionListener {
-                    _isPlaying.value = false
-                    _currentPositionMs.value = _durationMs.value
-                    stopTicker()
-                }
+            val player = MediaPlayer()
+            player.setOnErrorListener { _, what, extra ->
+                _isPlaying.value = false
+                stopTicker()
+                true
             }
+            player.setOnCompletionListener {
+                _isPlaying.value = false
+                _currentPositionMs.value = _durationMs.value
+                stopTicker()
+            }
+            java.io.FileInputStream(file).use { fis ->
+                player.setDataSource(fis.fd)
+            }
+            player.prepare()
+            _durationMs.value = player.duration.toLong().coerceAtLeast(1000L)
+            mediaPlayer = player
         } catch (e: Exception) {
             e.printStackTrace()
+            _isPlaying.value = false
         }
     }
 

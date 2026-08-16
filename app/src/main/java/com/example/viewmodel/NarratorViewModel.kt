@@ -11,9 +11,10 @@ import com.example.ai.ScriptGenerator
 import com.example.ai.StepDetector
 import com.example.ai.Translator
 import com.example.ai.VisionAnalyzer
-import com.example.audio.AndroidTtsEngine
 import com.example.audio.AudioExporter
+import com.example.audio.HighFidelityOnDeviceTtsEngine
 import com.example.audio.NarrationPlayer
+import com.example.audio.NeuralStudioTtsEngine
 import com.example.model.AiMode
 import com.example.model.AnalysisResult
 import com.example.model.ContentCategory
@@ -24,6 +25,7 @@ import com.example.model.NarrationLanguage
 import com.example.model.NarrationStyle
 import com.example.model.ProcessingStage
 import com.example.model.ProcessingState
+import com.example.model.TtsVoiceModel
 import com.example.model.VideoMetadata
 import com.example.processing.ChangeDetector
 import com.example.processing.FrameSampler
@@ -48,7 +50,8 @@ class NarratorViewModel(application: Application) : AndroidViewModel(application
     private val stepDetector = StepDetector()
     private val scriptGenerator = ScriptGenerator()
     private val translator = Translator()
-    private val ttsEngine = AndroidTtsEngine(context)
+    private val localTtsEngine = HighFidelityOnDeviceTtsEngine(context)
+    private val ttsEngine = NeuralStudioTtsEngine(localTtsEngine)
     val audioExporter = AudioExporter(context)
     val audioPlayer = NarrationPlayer(context)
     private val sampleVideoGenerator = SampleVideoGenerator(context)
@@ -70,6 +73,12 @@ class NarratorViewModel(application: Application) : AndroidViewModel(application
 
     init {
         ttsEngine.initialize { /* Ready */ }
+    }
+
+    fun updateVoiceModel(voiceModel: TtsVoiceModel) {
+        ttsEngine.setVoiceModel(voiceModel)
+        localTtsEngine.setVoiceModel(voiceModel)
+        _config.value = _config.value.copy(voiceModel = voiceModel)
     }
 
     fun onVideoSelected(uri: Uri) {
