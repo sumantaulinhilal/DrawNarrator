@@ -1,0 +1,7 @@
+{
+  "name": "Drawing Tutorial Narrator AI",
+  "description": "Analyze real-time drawing tutorial videos, detect drawing steps, generate educational narration scripts, and produce synchronized audio narration.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
