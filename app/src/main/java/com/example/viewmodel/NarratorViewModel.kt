@@ -81,6 +81,19 @@ class NarratorViewModel(application: Application) : AndroidViewModel(application
         _config.value = _config.value.copy(voiceModel = voiceModel)
     }
 
+    fun testCurrentVoiceSample() {
+        val sampleText = when (_config.value.language) {
+            NarrationLanguage.INDONESIAN -> "Halo! Saya adalah narator AI gambar Anda. Suara ini terdengar sangat alami dan jernih, bukan?"
+            NarrationLanguage.ENGLISH -> "Hello! I am your AI drawing tutor narrator. Ready to guide your drawing tutorial step by step!"
+            else -> "Hello! I will be narrating your drawing tutorial."
+        }
+        ttsEngine.speak(
+            text = sampleText,
+            rate = _config.value.speechRate,
+            pitch = _config.value.speechPitch
+        )
+    }
+
     fun onVideoSelected(uri: Uri) {
         viewModelScope.launch {
             try {
@@ -128,6 +141,7 @@ class NarratorViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun updateLanguage(language: NarrationLanguage) {
+        ttsEngine.setLanguage(language)
         _config.value = _config.value.copy(language = language)
     }
 

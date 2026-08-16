@@ -34,6 +34,12 @@ class NeuralStudioTtsEngine(private val fallbackEngine: TextToSpeechEngine? = nu
     private var activeVoiceModel: TtsVoiceModel = TtsVoiceModel.KOKORO_HEART
     private var mediaPlayer: MediaPlayer? = null
 
+    private var activeLanguage: NarrationLanguage = NarrationLanguage.INDONESIAN
+
+    fun setLanguage(language: NarrationLanguage) {
+        this.activeLanguage = language
+    }
+
     fun setVoiceModel(model: TtsVoiceModel) {
         this.activeVoiceModel = model
     }
@@ -51,7 +57,7 @@ class NeuralStudioTtsEngine(private val fallbackEngine: TextToSpeechEngine? = nu
             try {
                 val tempFile = File.createTempFile("tts_play_", ".mp3")
                 tempFile.deleteOnExit()
-                val success = synthesizeToFile(text, tempFile, NarrationLanguage.INDONESIAN, rate, pitch)
+                val success = synthesizeToFile(text, tempFile, activeLanguage, rate, pitch)
                 if (success && tempFile.exists() && tempFile.length() > 200) {
                     withContext(Dispatchers.Main) {
                         try {

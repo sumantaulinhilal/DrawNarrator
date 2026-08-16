@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Style
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -77,6 +78,7 @@ fun ConfigSection(
     onAiModeChange: (AiMode) -> Unit,
     onVoiceModelChange: (TtsVoiceModel) -> Unit,
     onSpeechRateChange: (Float) -> Unit,
+    onTestVoiceSample: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     var languageDropdownExpanded by remember { mutableStateOf(false) }
@@ -131,7 +133,42 @@ fun ConfigSection(
             Spacer(modifier = Modifier.height(16.dp))
 
             // 1. Neural Voice Model Selector (Kokoro, Voicebox, Vibe Voice, System)
-            SectionLabel(icon = Icons.Default.GraphicEq, title = "Neural Voice Model (No API Needed)")
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                SectionLabel(icon = Icons.Default.GraphicEq, title = "Neural Studio Voice")
+                if (onTestVoiceSample != null) {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable { onTestVoiceSample() }
+                            .testTag("preview_voice_sample_button")
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PlayArrow,
+                                contentDescription = "Test Voice",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "Test Voice",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
+            }
             Spacer(modifier = Modifier.height(6.dp))
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
